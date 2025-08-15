@@ -3,10 +3,16 @@ name = "ysc1"
 version = "0.0.1"
 edition = "2024"
 
+# To use the portable SIMD backend, you must build with the nightly toolchain
+# and enable the `portable_simd` feature flag via RUSTFLAGS.
+# Example: RUSTFLAGS='--cfg ysc1_simd' cargo +nightly build
+
+
 [dependencies]
 cfg-if = { version = "1.0.1", features = ["core"] }
-cipher = { version = "^0.5.0-rc.0", features = ["alloc", "dev", "os_rng", "rand_core", "zeroize"] }
+cipher = { version = "0.4.4", features = ["alloc", "dev", "rand_core", "zeroize"] }
 zeroize = { version = "1.8.1", features = ["zeroize_derive", "std", "simd", "derive"] }
 
-[target.'cfg(any(target_arch = "x86_64", target_arch = "x86"))'.dependencies]
-cpufeatures = "0.2.17"
+[features]
+default = []
+ysc1_simd = []

@@ -1,7 +1,8 @@
 use crate::{arx, core::Ysc1Core, Ysc1Variant};
 use cipher::{Block, BlockSizeUser, ParBlocksSizeUser, StreamBackend};
+use core::simd::prelude::*;
 
-/// The software (scalar) backend for YSC1.
+/// The portable SIMD backend for YSC1.
 pub struct Backend<'a, V: Ysc1Variant>(pub(crate) &'a mut Ysc1Core<V>);
 
 impl<'a, V: Ysc1Variant> BlockSizeUser for Backend<'a, V> {
@@ -22,7 +23,7 @@ impl<'a, V: Ysc1Variant> StreamBackend for Backend<'a, V> {
         working_state[0] ^= self.0.counter;
 
         for _ in 0..V::KEYSTREAM_ROUNDS {
-            permutation(&mut working_state);
+            permutation_simd(&mut working_state);
         }
 
         let keystream_s_l = &working_state[0..8];
@@ -32,28 +33,37 @@ impl<'a, V: Ysc1Variant> StreamBackend for Backend<'a, V> {
     }
 }
 
-/// The state permutation function based on the (2x2) Lai-Massey structure.
+/// The state permutation function using portable SIMD.
 #[inline(always)]
-pub(crate) fn permutation(state: &mut [u64; 16]) {
-    let mut delta = [0u64; 8];
+fn permutation_simd(state: &mut [u64; 16]) {
+    // Load state blocks A, B, C, D into SIMD vectors.
+    // We use u64x4, which corresponds to 256-bit vectors.
+    let a = u64x4::from_slice(&state[0..4]);
+    let b = u64x4::from_slice(&state[4..8]);
+    let c = u64x4::from_slice(&state[8..12]);
+    let d = u64x4::from_slice(&state[12..16]);
 
     // 1. Calculate Difference Vector: Δ = (A ⊕ C) || (B ⊕ D)
-    for i in 0..4 {
-        delta[i] = state[i] ^ state[i + 8];
-        delta[i + 4] = state[i + 4] ^ state[i + 12];
-    }
+    let delta_l = a ^ c;
+    let delta_r = b ^ d;
 
     // 2. Apply Round Function: T = ARX(Δ)
-    arx::arx_round(&mut delta);
+    let (t_l, t_r) = arx::arx_round_simd(delta_l, delta_r);
 
     // 3. State Update
-    for i in 0..4 {
-        state[i] ^= delta[i];
-        state[i + 4] ^= delta[i + 4];
-        state[i + 8] ^= delta[i];
-        state[i + 12] ^= delta[i + 4];
-    }
+    let state_a = a ^ t_l;
+    let state_b = b ^ t_r;
+    let state_c = c ^ t_l;
+    let state_d = d ^ t_r;
+
+    // Store results back to a temporary array to perform the scalar rotation.
+    let mut temp_state = [0u64; 16];
+    state_a.write_to_slice(&mut temp_state[0..4]);
+    state_b.write_to_slice(&mut temp_state[4..8]);
+    state_c.write_to_slice(&mut temp_state[8..12]);
+    state_d.write_to_slice(&mut temp_state[12..16]);
 
     // 4. Apply Half-Round Function σ (Linear Permutation)
-    state.rotate_left(1);
+    temp_state.rotate_left(1);
+    *state = temp_state;
 }
