@@ -4,8 +4,10 @@ use crate::{avx2_cpuid, sse2_cpuid};
 
 use super::Tokens;
 use super::{Ysc1Variant, P, R1, R2, R3, STATE_WORDS};
-use cipher::{BlockSizeUser, Iv, IvSizeUser, Key, KeyIvInit, KeySizeUser, ParBlocksSizeUser, StreamCipherCore};
+use cipher::{BlockSizeUser, Iv, IvSizeUser, Key, KeyIvInit, KeySizeUser, ParBlocksSizeUser, StreamCipherCore, StreamCipherSeekCore};
 use cfg_if::cfg_if;
+#[cfg(feature = "zeroize")]
+use zeroize::ZeroizeOnDrop;
 
 /// The core state for the YSC1 cipher.
 /// This struct only holds the internal state. All logic is in the backend.
@@ -58,8 +60,8 @@ impl<V: Ysc1Variant> StreamCipherCore for Ysc1Core<V> {
     fn remaining_blocks(&self) -> Option<usize> {
         None
     }
-
-    fn process_with_backend(&mut self, f: impl cipher::StreamClosure<BlockSize = Self::BlockSize>) {
+    
+    fn process_with_backend(&mut self, f: impl cipher::StreamCipherClosure<BlockSize = Self::BlockSize>) {
         cfg_if! {
             if #[cfg(ysc1_force_soft)] {
                 f.call(&mut backends::soft::Backend(self));
@@ -81,14 +83,14 @@ impl<V: Ysc1Variant> StreamCipherCore for Ysc1Core<V> {
                     }
                 }
             } else if #[cfg(all(target_arch = "aarch64", target_feature = "neon"))] {
-                unsafe {
-                    backends::neon::inner::<R, _>(&mut self.state, f);
-                }
+                unimplemented!();
             } else {
                 f.call(&mut backends::soft::Backend(self));
             }
         }
     }
+
+    
 }
 
 impl<V: Ysc1Variant> BlockSizeUser for Ysc1Core<V> {
@@ -152,3 +154,28 @@ impl<V: Ysc1Variant> KeyIvInit for Ysc1Core<V> {
         
     }
 }
+
+
+impl<V: Ysc1Variant> StreamCipherSeekCore for Ysc1Core<V> {
+    type Counter = u64;
+
+    #[inline(always)]
+    fn get_block_pos(&self) -> Self::Counter {
+        self.state[12]
+    }
+
+    #[inline(always)]
+    fn set_block_pos(&mut self, pos: Self::Counter) {
+        self.state[12] = pos
+    }
+}
+
+#[cfg(feature = "zeroize")]
+impl<V: Ysc1Variant> Drop for Ysc1Core<V> {
+    fn drop(&mut self) {
+        self.state.zeroize();
+    }
+}
+
+#[cfg(feature = "zeroize")]
+impl<V: Ysc1Variant> ZeroizeOnDropDrop for Ysc1Core<V> {}

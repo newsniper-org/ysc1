@@ -1,10 +1,8 @@
 use super::super::core::Ysc1Core;
 use super::super::{Ysc1Variant, KEYSTREAM_WORDS, STATE_WORDS};
 use cipher::{
-    BlockBackend,
-    inout::InOut,
     Block, BlockSizeUser, ParBlocksSizeUser,
-    StreamBackend
+    StreamCipherBackend
 };
 
 /// The software backend for YSC1, wrapping the core logic.
@@ -18,7 +16,7 @@ impl<'a, V: Ysc1Variant> ParBlocksSizeUser for Backend<'a, V> {
     type ParBlocksSize = cipher::consts::U64;
 }
 
-impl<'a, V: Ysc1Variant> StreamBackend for Backend<'a, V> {
+impl<'a, V: Ysc1Variant> StreamCipherBackend for Backend<'a, V> {
     fn gen_ks_block(&mut self, block: &mut Block<Self>) {
         // 1. Increment the counter word in the persistent state.
         self.0.state[12] = self.0.state[12].wrapping_add(1);
@@ -38,7 +36,7 @@ impl<'a, V: Ysc1Variant> StreamBackend for Backend<'a, V> {
         });   
     }
 }
-
+/*
 impl<'a, V: Ysc1Variant> BlockBackend for Backend<'a, V> {
     fn proc_block(&mut self, mut block: InOut<'_, '_, Block<Self>>) {
         // 1. Increment the counter word in the persistent state.
@@ -58,6 +56,7 @@ impl<'a, V: Ysc1Variant> BlockBackend for Backend<'a, V> {
         block.xor_in2out(&keystream_bytes);
     }
 }
+*/
 
 /// Applies the core permutation for the specified number of rounds.
 #[inline(always)]

@@ -44,8 +44,8 @@ cfg_if! {
 pub trait Ysc1Variant: Clone {
     const KEY_WORDS: usize;
     const NONCE_WORDS: usize;
-    type KeySize: cipher::generic_array::ArrayLength<u8>;
-    type NonceSize: cipher::generic_array::ArrayLength<u8>;
+    type KeySize: cipher::array::ArraySize;
+    type NonceSize: cipher::array::ArraySize;
     const INIT_ROUNDS: usize;
     const KEYSTREAM_ROUNDS: usize;
 }
@@ -97,12 +97,12 @@ pub type Ysc1Cipher1024 = cipher::StreamCipherCoreWrapper<Ysc1Core<Ysc1_1024>>;
 #[cfg(test)]
 mod tests {
     use super::{Ysc1Cipher1024, Ysc1Cipher512};
-    use cipher::{KeyIvInit, StreamCipher};
+    use cipher::{consts::{U128, U64}, KeyIvInit, StreamCipher};
 
     #[test]
     fn test_ysc1_512_encryption_decryption() {
-        let key = cipher::generic_array::GenericArray::from([0x01; 64]);
-        let nonce = cipher::generic_array::GenericArray::from([0x02; 64]);
+        let key = cipher::array::Array::<u8, U64>::from([0x01; 64]);
+        let nonce = cipher::array::Array::<u8, U64>::from([0x02; 64]);
         let mut plaintext = *b"This is a test message for YSC1-512 stream cipher.";
         let original_plaintext = plaintext;
         let mut cipher = Ysc1Cipher512::new(&key, &nonce);
@@ -115,8 +115,8 @@ mod tests {
 
     #[test]
     fn test_ysc1_1024_keystream_generation() {
-        let key = cipher::generic_array::GenericArray::from([0x03; 128]);
-        let nonce = cipher::generic_array::GenericArray::from([0x04; 64]);
+        let key = cipher::array::Array::<u8, U128>::from([0x03; 128]);
+        let nonce = cipher::array::Array::<u8, U64>::from([0x04; 64]);
         let mut data1 = [0u8; 128];
         let mut data2 = [0u8; 128];
         let mut cipher1 = Ysc1Cipher1024::new(&key, &nonce);
