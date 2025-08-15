@@ -2,6 +2,7 @@
 name = "ysc1"
 version = "0.0.1"
 edition = "2024"
+license = "BSD-2-Clause"
 
 # To use the portable SIMD backend, you must build with the nightly toolchain
 # and enable the `portable_simd` feature flag via RUSTFLAGS.
