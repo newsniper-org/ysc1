@@ -1,0 +1,12 @@
+[package]
+name = "ysc1"
+version = "0.0.1"
+edition = "2024"
+
+[dependencies]
+cfg-if = { version = "1.0.1", features = ["core"] }
+cipher = { version = "0.4.4", features = ["alloc", "rand_core", "std", "zeroize"] }
+zeroize = { version = "1.8.1", features = ["zeroize_derive", "std", "simd", "derive"] }
+
+[target.'cfg(any(target_arch = "x86_64", target_arch = "x86"))'.dependencies]
+cpufeatures = "0.2.17"
