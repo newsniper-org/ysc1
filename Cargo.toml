@@ -3,16 +3,26 @@ name = "ysc1"
 version = "0.1.0"
 edition = "2024"
 license = "BSD-2-Clause"
+description = "YSC1 (Yeun's Stream Cipher 1) based on the Amaryllis-1024 specification"
+repository = "https://github.com/newsniper-org/ysc1"
 
 # To use the portable SIMD backend, you must build with the nightly toolchain
 # and enable the `portable_simd` feature flag via RUSTFLAGS.
 # Example: RUSTFLAGS='--cfg ysc1_simd' cargo +nightly build
 
-
 [dependencies]
 cfg-if = { version = "1.0.1", features = ["core"] }
 cipher = { version = "0.4.4", features = ["alloc", "dev", "rand_core", "zeroize"] }
 zeroize = { version = "1.8.1", features = ["zeroize_derive", "std", "simd", "derive"] }
+
+# Add criterion as a development dependency for benchmarking.
+[dev-dependencies]
+criterion = "0.5"
+
+# Configure the benchmark runner.
+[[bench]]
+name = "speed" # This will be the name of our benchmark file.
+harness = false # We use criterion's harness, not the default one.
 
 [features]
 default = []
