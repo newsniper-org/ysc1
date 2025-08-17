@@ -1,7 +1,8 @@
 # YSC1 Stream Cipher
 A Rust implementation of the **YSC1 (Yeun's Stream Cipher 1)** stream cipher.
 
-The design is based on the "Amaryllis-1024" specification, which utilizes a **(2x2) generalized Lai-Massey structure**. This structure offers robust security properties and efficient performance across various platforms.
+The design is based on the **"Amaryllis-1024"** specification, which utilizes a **(2x2) generalized Lai-Massey structure**. This structure offers robust security properties and efficient performance across various platforms.
+(**"Amaryllis-1024"** specification document is planned to be published soon.)
 
 ## Features
 * **Two Security Levels**:
