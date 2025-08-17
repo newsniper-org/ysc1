@@ -1,6 +1,6 @@
 [package]
 name = "ysc1"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 license = "BSD-2-Clause"
 description = "YSC1 (Yeun's Stream Cipher 1) based on the Amaryllis-1024 specification"
